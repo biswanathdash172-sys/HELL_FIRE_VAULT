@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hellfire Vault | History</title>
+    <link href="https://fonts.googleapis.com/css2?family=Creepster&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --neon-red: #e60000;
+            --dark-red: #4a0000;
+            --bg-color: #0a0000;
+            --text-main: #f2f2f2;
+            --panel-bg: rgba(20, 0, 0, 0.85);
+            --vine-color: #2a0000;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Roboto', sans-serif;
+            background: url('/static/home_bg.png') no-repeat center center fixed;
+            background-size: cover;
+        }
+
+        /* Overlay */
+        .overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at center, rgba(10, 0, 0, 0.4) 0%, rgba(5, 0, 0, 0.9) 100%);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* Navbar */
+        nav {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            background: linear-gradient(180deg, rgba(30,0,0,0.9) 0%, transparent 100%);
+            border-bottom: 2px solid var(--dark-red);
+            box-shadow: 0 4px 15px rgba(200, 0, 0, 0.3);
+        }
+
+        .brand {
+            font-family: 'Creepster', cursive;
+            font-size: 2rem;
+            color: var(--neon-red);
+            text-shadow: 0 0 10px var(--neon-red);
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+        }
+
+        .nav-link {
+            color: var(--text-main);
+            text-decoration: none;
+            font-weight: bold;
+            padding: 8px 16px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            transition: 0.3s;
+        }
+        
+        .nav-link:hover {
+            color: var(--neon-red);
+            border-color: var(--neon-red);
+            background: rgba(230,0,0,0.1);
+        }
+
+        /* Main Container */
+        .history-container {
+            position: relative;
+            z-index: 10;
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        h2 {
+            font-family: 'Creepster', cursive;
+            color: var(--neon-red);
+            font-size: 3rem;
+            text-shadow: 2px 2px 5px #000;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        /* History Cards */
+        .card {
+            background: var(--panel-bg);
+            border: 1px solid var(--dark-red);
+            border-radius: 8px;
+            margin-bottom: 25px;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(50, 0, 0, 0.9);
+            backdrop-filter: blur(5px);
+            border-left: 5px solid var(--neon-red);
+            transition: transform 0.2s;
+        }
+
+        .card:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 30px rgba(100, 0, 0, 0.8), inset 0 0 20px rgba(230, 0, 0, 0.1);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--dark-red);
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+        }
+
+        .file-info {
+            font-size: 1.2rem;
+            color: var(--neon-red);
+            font-weight: bold;
+        }
+
+        .date-info {
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        .transaction-list {
+            list-style: none;
+            padding: 0;
+            background: rgba(0,0,0,0.6);
+            padding: 15px;
+            border: 1px dashed var(--dark-red);
+        }
+
+        .transaction-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid var(--dark-red);
+            font-family: monospace;
+            font-size: 1.1rem;
+        }
+        .transaction-list li:last-child {
+            border-bottom: none;
+        }
+
+        .transaction-list li span.payer { color: #ff6666; font-weight: bold; }
+        .transaction-list li span.payee { color: #66ff66; font-weight: bold; }
+        .transaction-list li span.amount { color: #fff; font-weight: bold; }
+
+        .dl-link {
+            display: inline-block;
+            margin-top: 15px;
+            color: var(--text-main);
+            text-decoration: none;
+            background: var(--dark-red);
+            padding: 8px 15px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            transition: 0.3s;
+        }
+        .dl-link:hover {
+            background: var(--neon-red);
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #666;
+            margin-top: 50px;
+            font-size: 1.2rem;
+            font-style: italic;
+            border: 1px dashed var(--dark-red);
+            padding: 40px;
+            background: rgba(0,0,0,0.5);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="overlay"></div>
+
+    <nav>
+        <a href="/" class="brand">Vault</a>
+        <div class="nav-links">
+            <a href="/dashboard" class="nav-link">Dashboard</a>
+            <a href="/history" class="nav-link">Ledger History</a>
+            <a href="/login" class="nav-link">Sign In / Up</a>
+        </div>
+    </nav>
+
+    <div class="history-container">
+        <h2>Chronicles of Debt</h2>
+
+        {% if history|length > 0 %}
+            {% for item in history|reverse %}
+            <div class="card">
+                <div class="card-header">
+                    <div class="file-info">📄 {{ item.filename }}</div>
+                    <div class="date-info">Uploaded: {{ item.date }}</div>
+                </div>
+                
+                <ul class="transaction-list">
+                    {% if item.transactions|length > 0 %}
+                        {% for t in item.transactions %}
+                        <li>> <span class="payer">{{ t.payer }}</span> pays <span class="payee">{{ t.payee }}</span> <span class="amount">₹{{ t.amount }}</span></li>
+                        {% endfor %}
+                    {% else %}
+                        <li>No outstanding debts required resolving.</li>
+                    {% endif %}
+                </ul>
+
+                <a href="{{ item.download_url }}" class="dl-link" download>Download Linked Briefing (PPTX)</a>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                No ledgers have been submitted to the void yet.
+            </div>
+        {% endif %}
+    </div>
+
+</body>
+</html>

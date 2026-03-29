@@ -1,0 +1,10 @@
+Payer,Payee,Amount
+Dustin,Mike,15.50
+Lucas,Dustin,10.00
+Will,Mike,5.00
+Mike,Lucas,20.00
+Max,Will,8.00
+Dustin,Max,12.00
+Steve,Dustin,50.00
+Robin,Steve,25.00
+Nancy,Robin,15.00

@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hellfire Vault | Member Profiles</title>
+    <link href="https://fonts.googleapis.com/css2?family=Creepster&family=Outfit:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --neon-blue: #00d2ff;
+            --dim-blue: rgba(0, 210, 255, 0.2);
+            --neon-red: #ff3e3e;
+            --bg-dark: #000000;
+            --glass-bg: rgba(20, 30, 40, 0.4);
+            --panel-border: rgba(0, 210, 255, 0.3);
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.65);
+            --neon-green: #39ff14;
+        }
+
+        * { box-sizing: border-box; }
+
+        body, html {
+            margin: 0; padding: 0; min-height: 100vh;
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            font-family: 'Outfit', sans-serif;
+        }
+
+        /* Ambient Background matching Dashboard */
+        .ambient-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: url('/static/lab_corridor.jpg') no-repeat center center;
+            background-size: cover;
+            filter: brightness(0.6);
+            z-index: 0;
+        }
+
+        .ambient-bg::after {
+            content: '';
+            position: absolute;
+            top:0; left:0; width:100%; height:100%;
+            background: rgba(255, 0, 0, 0.15);
+            z-index: 1;
+        }
+
+        .conduit-overlay {
+            position: fixed; top:0; left:0; width:100%; height:100%;
+            background: 
+                linear-gradient(90deg, transparent 20%, rgba(20,20,20,0.8) 21%, transparent 22%),
+                linear-gradient(0deg, transparent 40%, rgba(30,30,30,0.5) 41%, transparent 42%),
+                url('https://www.transparenttextures.com/patterns/carbon-fibre.png');
+            opacity: 0.3;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        .viewport {
+            position: relative;
+            z-index: 10;
+            width: 100vw;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 40px;
+        }
+
+        /* Nav Frame */
+        .frame {
+            width: 900px;
+            height: 60px;
+            background: linear-gradient(180deg, #333 0%, #111 50%, #222 100%);
+            border: 2px solid #444;
+            border-radius: 10px;
+            position: relative;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8), inset 0 0 10px rgba(255,255,255,0.1), 0 0 20px var(--dim-blue);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            margin-bottom: 40px;
+        }
+
+        .frame::before, .frame::after {
+            content: ''; position: absolute; width: 100px; height: 100%;
+            background: inherit; border: inherit; top: -2px;
+        }
+        .frame::before { left: -80px; transform: skewX(-30deg); border-radius: 10px 0 0 10px; }
+        .frame::after { right: -80px; transform: skewX(30deg); border-radius: 0 10px 10px 0; }
+
+        .frame-nav { display: flex; gap: 40px; z-index: 30; }
+        .nav-item {
+            color: var(--text-secondary); text-decoration: none; font-size: 0.8rem;
+            font-weight: 600; letter-spacing: 2px; transition: 0.3s;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .nav-item:hover, .nav-item.active { color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); }
+
+        /* Members Grid Content */
+        .content-area {
+            width: 1000px;
+            max-width: 90vw;
+            background: rgba(10, 15, 20, 0.85);
+            border: 1px solid var(--panel-border);
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.9), inset 0 0 30px var(--dim-blue);
+            backdrop-filter: blur(15px);
+        }
+
+        .page-header {
+            color: var(--neon-blue);
+            font-size: 1.5rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--panel-border);
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        .members-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        .member-card {
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .member-card:hover {
+            border-color: var(--neon-blue);
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px var(--dim-blue);
+        }
+
+        /* Scanline effect on card hover */
+        .member-card::after {
+            content: ''; position: absolute; top: -100%; left: 0; width: 100%; height: 2px;
+            background: var(--neon-blue); opacity: 0; transition: 0.5s; box-shadow: 0 0 10px var(--neon-blue);
+        }
+        .member-card:hover::after { animation: scan 2s infinite linear; opacity: 1; }
+
+        .member-name {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .member-status {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px dashed rgba(255,255,255,0.1);
+        }
+
+        .status-positive { color: var(--neon-green); text-shadow: 0 0 10px rgba(57, 255, 20, 0.3); }
+        .status-negative { color: var(--neon-red); text-shadow: 0 0 10px rgba(255, 62, 62, 0.3); }
+        .status-neutral { color: var(--text-secondary); }
+
+        .transactions-title {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        .transaction-list {
+            list-style: none; padding: 0; margin: 0;
+            font-family: 'JetBrains Mono', monospace; font-size: 0.8rem;
+        }
+
+        .transaction-item {
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .tx-pays { color: var(--neon-red); }
+        .tx-gets { color: var(--neon-green); }
+
+        .no-data {
+            text-align: center;
+            padding: 50px;
+            color: var(--text-secondary);
+            font-family: 'JetBrains Mono', monospace;
+            grid-column: 1 / -1;
+        }
+
+        @keyframes scan { 0% { top: 0%; } 100% { top: 100%; } }
+    </style>
+</head>
+<body>
+    <div class="ambient-bg"></div>
+    <div class="conduit-overlay"></div>
+
+    <div class="viewport">
+        <!-- TOP FRAME & NAV -->
+        <div class="frame">
+            <div class="frame-nav">
+                <a href="/dashboard" class="nav-item"><span>▣</span> DASHBOARD</a>
+                <a href="/members" class="nav-item active"><span>👥</span> MEMBERS</a>
+                <a href="/analytics" class="nav-item"><span>📈</span> ANALYTICS</a>
+                <a href="/history" class="nav-item"><span>▤</span> LEDGER HISTORY</a>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <div class="page-header">
+                <div><span>👥</span> MEMBER LEDGER PROFILES</div>
+                <div style="font-size: 0.8rem; color: var(--text-secondary); font-family: 'JetBrains Mono', monospace;">
+                    DATA SOURCE_ {{ latest_data.date if latest_data else 'NO LINK' }}
+                </div>
+            </div>
+
+            <div class="members-grid">
+                {% if not latest_data %}
+                    <div class="no-data">
+                        ⚠ NO LEDGER DATA DETECTED IN THE VOID<br><br>
+                        <a href="/dashboard" style="color: var(--neon-blue);">RETURN TO DASHBOARD TO INJECT LEDGER CSV</a>
+                    </div>
+                {% else %}
+                    <!-- Group transactions by member -->
+                    {% set all_members = latest_data.balances.keys() | list %}
+                    {% for member in all_members | sort %}
+                        <div class="member-card">
+                            <div class="member-name">👤 {{ member }}</div>
+
+                            {% set bal = latest_data.balances[member] %}
+                            <div class="member-status 
+                                {% if bal > 0.01 %}status-positive{% elif bal < -0.01 %}status-negative{% else %}status-neutral{% endif %}">
+                                {% if bal > 0.01 %}
+                                    NET: +₹{{ "%.2f"|format(bal) }} (Owed)
+                                {% elif bal < -0.01 %}
+                                    NET: -₹{{ "%.2f"|format(0 - bal) }} (Debt)
+                                {% else %}
+                                    NET: ₹0.00 (Settled)
+                                {% endif %}
+                            </div>
+
+                            <div class="transactions-title">Required Actions</div>
+                            <ul class="transaction-list">
+                                {% set count = 0 %}
+                                {% for tx in latest_data.transactions %}
+                                    {% if tx.payer == member %}
+                                        <li class="transaction-item tx-pays">
+                                            <span>Pay {{ tx.payee }}</span>
+                                            <span>₹{{ tx.amount }}</span>
+                                        </li>
+                                        {% set count = count + 1 %}
+                                    {% elif tx.payee == member %}
+                                        <li class="transaction-item tx-gets">
+                                            <span>Collect from {{ tx.payer }}</span>
+                                            <span>₹{{ tx.amount }}</span>
+                                        </li>
+                                        {% set count = count + 1 %}
+                                    {% endif %}
+                                {% endfor %}
+
+                                {% if count == 0 %}
+                                    <li class="transaction-item status-neutral">No actions required.</li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <div style="margin-top: 40px; text-align: center;">
+                <a href="/logout" style="color: var(--neon-red); text-decoration: none; border: 1px solid var(--neon-red); padding: 8px 20px; border-radius: 4px; font-size: 0.8rem; font-family: 'JetBrains Mono', monospace; transition: 0.3s; letter-spacing: 2px;"
+                   onmouseover="this.style.background='rgba(255, 62, 62, 0.2)'; this.style.boxShadow='0 0 10px rgba(255, 62, 62, 0.5)'" 
+                   onmouseout="this.style.background='transparent'; this.style.boxShadow='none'">
+                    ⏻ SIGNOUT
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

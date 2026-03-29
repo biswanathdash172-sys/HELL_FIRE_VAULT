@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hellfire Vault | Command Center</title>
+    <link href="https://fonts.googleapis.com/css2?family=Creepster&family=Outfit:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --neon-blue: #00d2ff;
+            --dim-blue: rgba(0, 210, 255, 0.2);
+            --neon-red: #ff3e3e;
+            --deep-red: #8b0000;
+            --bg-dark: #000000;
+            --glass-bg: rgba(20, 30, 40, 0.4);
+            --panel-border: rgba(0, 210, 255, 0.3);
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.65);
+        }
+
+        * { box-sizing: border-box; }
+
+        body, html {
+            margin: 0; padding: 0; height: 100vh;
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            font-family: 'Outfit', sans-serif;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Ambient Background */
+        .ambient-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: url('/static/lab_corridor.jpg') no-repeat center center;
+            background-size: cover;
+            filter: brightness(0.6); /* Increased from 0.25 */
+            z-index: 0;
+        }
+
+        .ambient-bg::after {
+            content: '';
+            position: absolute;
+            top:0; left:0; width:100%; height:100%;
+            background: rgba(255, 0, 0, 0.1); /* 10% reddish effect */
+            z-index: 1;
+        }
+
+        /* Electric Lab Obstacles Overlay (Wires/Pipes) */
+        .conduit-overlay {
+            position: fixed; top:0; left:0; width:100%; height:100%;
+            background: 
+                linear-gradient(90deg, transparent 20%, rgba(20,20,20,0.8) 21%, transparent 22%),
+                linear-gradient(0deg, transparent 40%, rgba(30,30,30,0.5) 41%, transparent 42%),
+                url('https://www.transparenttextures.com/patterns/carbon-fibre.png');
+            opacity: 0.3;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        /* 3D Container */
+        .viewport {
+            position: relative;
+            z-index: 10;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 40px;
+            perspective: 2000px; /* Crucial for 3D views */
+        }
+
+        /* Metallic Frames */
+        .frame {
+            width: 900px;
+            height: 60px;
+            background: linear-gradient(180deg, #333 0%, #111 50%, #222 100%);
+            border: 2px solid #444;
+            border-radius: 10px;
+            position: relative;
+            box-shadow: 
+                0 0 30px rgba(0,0,0,0.8),
+                inset 0 0 10px rgba(255,255,255,0.1),
+                0 0 20px var(--dim-blue);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+        }
+
+        .frame::before, .frame::after {
+            content: '';
+            position: absolute;
+            width: 100px;
+            height: 100%;
+            background: inherit;
+            border: inherit;
+            top: -2px;
+        }
+        .frame::before { left: -80px; transform: skewX(-30deg); border-radius: 10px 0 0 10px; }
+        .frame::after { right: -80px; transform: skewX(30deg); border-radius: 0 10px 10px 0; }
+
+        .frame-nav {
+            display: flex;
+            gap: 40px;
+            z-index: 30;
+        }
+
+        .nav-item {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 2px;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .nav-item:hover { color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); }
+
+        /* Main Display Section */
+        .display-unit {
+            flex: 1;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 30px;
+            margin: 20px 0;
+            transform-style: preserve-3d;
+        }
+
+        /* 3D Panels */
+        .side-panel {
+            width: 400px;
+            height: 80%;
+            background: var(--glass-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 12px;
+            backdrop-filter: blur(20px);
+            padding: 25px;
+            box-shadow: 0 0 40px rgba(0,0,0,0.5), inset 0 0 20px var(--dim-blue);
+            transition: 0.5s ease;
+        }
+
+        .panel-left { transform: rotateY(25deg); }
+        .panel-right { transform: rotateY(-25deg); }
+
+        .side-panel:hover {
+            border-color: var(--neon-blue);
+            background: rgba(255, 255, 255, 0.05); /* 5% whitish effect */
+            box-shadow: 0 0 70px rgba(0, 210, 255, 0.3), inset 0 0 40px var(--dim-blue);
+            transform: scale(1.02) rotateY(25deg);
+        }
+        .panel-right:hover { transform: scale(1.02) rotateY(-25deg); }
+
+        /* System Info Elements */
+        .panel-header {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--neon-blue);
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .panel-header::after { content: ''; flex: 1; height: 1px; background: var(--panel-border); margin-left: 15px; }
+
+        .info-row { margin-bottom: 15px; font-size: 0.85rem; line-height: 1.4; }
+        .label { color: var(--text-secondary); font-size: 0.7rem; text-transform: uppercase; display: block; margin-bottom: 2px; }
+
+        .world-map {
+            width: 100%;
+            height: 120px;
+            background: url('https://upload.wikimedia.org/wikipedia/commons/e/ec/World_map_blank_without_borders.svg') no-repeat center center;
+            background-size: contain;
+            filter: invert(1) sepia(1) saturate(5) hue-rotate(175deg) opacity(0.5);
+            margin: 20px 0;
+            position: relative;
+        }
+        .map-ping {
+            position: absolute;
+            width: 6px; height: 6px;
+            background: var(--neon-red);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--neon-red);
+            animation: ping 2s infinite;
+        }
+
+        @keyframes ping { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(3); opacity: 0; } }
+
+        /* Central Viewing Screen */
+        .central-screen {
+            width: 900px;
+            height: 90%;
+            background: #000;
+            border: 4px solid #222;
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 50px rgba(0, 210, 255, 0.1);
+        }
+
+        .screen-content {
+            width: 100%; height: 100%;
+            background: url('/static/lab_corridor.jpg') no-repeat center center;
+            background-size: cover;
+            position: absolute; top: 0; left: 0;
+            display: flex; 
+            justify-content: center; /* Moved back to center */
+            align-items: center;
+            filter: brightness(0.8);
+        }
+
+        .screen-overlay {
+            position: absolute; top:0; left:0; width:100%; height:100%;
+            background: rgba(0,0,0,0.2);
+            pointer-events: none;
+        }
+
+        /* Resolution Engine Box */
+        .engine-ui {
+            background: rgba(10, 15, 20, 0.85);
+            border: 1px solid var(--panel-border);
+            border-radius: 12px;
+            padding: 30px;
+            width: 350px; /* Restored width */
+            text-align: center;
+            z-index: 50;
+            backdrop-filter: blur(15px);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.9), inset 0 0 20px rgba(0,210,255,0.1);
+            transition: 0.5s ease;
+        }
+
+        .engine-ui:hover {
+            border-color: var(--neon-blue);
+            background: rgba(255, 255, 255, 0.05); /* 5% whitish effect */
+            box-shadow: 0 0 60px rgba(0, 210, 255, 0.25), inset 0 0 30px var(--dim-blue);
+            transform: scale(1.03);
+        }
+
+        .inject-btn {
+            background: linear-gradient(135deg, #222 0%, #111 100%);
+            border: 1px solid var(--panel-border);
+            color: #fff;
+            padding: 12px 30px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .inject-btn:hover {
+            box-shadow: 0 0 20px var(--dim-blue);
+            background: #2a2a2a;
+        }
+
+        /* Chat Window */
+        .chat-box { flex: 1; display: flex; flex-direction: column; }
+        .chat-messages { flex: 1; overflow-y: auto; padding-bottom: 10px; font-size: 0.85rem; color: var(--text-secondary); }
+        .chat-input-row { display: flex; gap: 5px; margin-top: 10px; }
+        .chat-input-row input {
+            flex: 1; background: rgba(0,0,0,0.5); border: 1px solid var(--panel-border);
+            color: #fff; padding: 8px; border-radius: 4px; outline: none; font-size: 0.8rem;
+        }
+        .chat-input-row button {
+            background: var(--neon-blue); border: none; color: #000; font-weight: 700;
+            padding: 0 15px; border-radius: 4px; cursor: pointer; font-size: 0.7rem;
+        }
+
+        /* Stats & Charts */
+        .interference-log { margin-top: 20px; }
+        .stat-bar-container { background: rgba(255,255,255,0.05); height: 8px; border-radius: 4px; margin: 8px 0; overflow: hidden; }
+        .stat-fill { height: 100%; background: var(--neon-blue); box-shadow: 0 0 10px var(--neon-blue); transition: 1s ease; }
+
+        /* Animation for graphs */
+        @keyframes flow { 0% { transform: translateX(0); } 100% { transform: translateX(-50px); } }
+        .graph-mini {
+            height: 40px; width: 100%;
+            background: repeating-linear-gradient(90deg, transparent, transparent 10px, var(--dim-blue) 11px);
+            margin-top: 10px;
+            border-bottom: 1px solid var(--panel-border);
+        }
+
+        /* Pulse / Scanning lines */
+        .scanline {
+            width: 100%; height: 2px;
+            background: rgba(0, 210, 255, 0.1);
+            position: absolute; top: 0; left:0;
+            animation: scan 4s linear infinite;
+        }
+        @keyframes scan { 0% { top: 0%; } 100% { top: 100%; } }
+
+        /* Results Area */
+        .results-container {
+            display: none;
+            text-align: left;
+            margin-top: 20px;
+            border-top: 1px solid var(--panel-border);
+            padding-top: 15px;
+        }
+        .results-list { list-style: none; padding: 0; margin: 0; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: #fff; }
+
+        /* Sidebar Styles */
+        .ai-sidebar {
+            position: fixed;
+            top: 50%;
+            right: 0;
+            transform: translateY(-50%) translateX(100%);
+            width: 380px;
+            height: 85vh;
+            z-index: 1000;
+            transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            align-items: center;
+        }
+
+        .ai-sidebar.active {
+            transform: translateY(-50%) translateX(0);
+        }
+
+        .ai-sidebar-content {
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 15, 20, 0.9);
+            border: 1px solid var(--panel-border);
+            border-right: none;
+            border-radius: 20px 0 0 20px;
+            padding: 30px;
+            box-shadow: -30px 0 60px rgba(0,0,0,0.8), inset 0 0 30px var(--dim-blue);
+            backdrop-filter: blur(25px);
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .ai-sidebar-content::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(45deg, transparent 0%, rgba(0, 210, 255, 0.03) 100%);
+            pointer-events: none;
+        }
+
+        /* Toggle Button */
+        .antigravity-toggle {
+            position: fixed;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 45px;
+            height: 160px;
+            background: linear-gradient(90deg, #111 0%, #222 100%);
+            border: 1px solid var(--panel-border);
+            border-right: none;
+            border-radius: 12px 0 0 12px;
+            cursor: pointer;
+            z-index: 1001;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: 0.3s;
+            box-shadow: -10px 0 25px rgba(0,0,0,0.5);
+        }
+
+        .antigravity-toggle:hover {
+            background: #1a1a1a;
+            border-color: var(--neon-blue);
+            box-shadow: -10px 0 30px var(--dim-blue);
+        }
+
+        .toggle-icon {
+            font-size: 1.4rem;
+            color: var(--neon-blue);
+            transition: 0.6s ease;
+            margin-bottom: 5px;
+        }
+
+        .ai-sidebar.active + .antigravity-toggle .toggle-icon {
+            transform: rotate(180deg);
+            color: var(--neon-red);
+        }
+
+        .toggle-label {
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 3px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        .ai-sidebar.active + .antigravity-toggle .toggle-label {
+            color: var(--neon-red);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="ambient-bg"></div>
+    <div class="conduit-overlay"></div>
+
+    <div class="viewport">
+        <!-- TOP FRAME & NAV -->
+        <div class="frame">
+            <div class="frame-nav">
+                <a href="/dashboard" class="nav-item"><span>▣</span> DASHBOARD</a>
+                <a href="/analytics" class="nav-item"><span>📈</span> ANALYTICS</a>
+                <a href="/history" class="nav-item"><span>▤</span> LEDGER HISTORY</a>
+                <a href="/login" class="nav-item"><span>◒</span> SIGN IN / UP</a>
+            </div>
+        </div>
+
+        <!-- MAIN 3D DISPLAY AREA -->
+        <div class="display-unit">
+            
+            <!-- LEFT PANEL: SYSTEM OVERVIEW -->
+            <div class="side-panel panel-left">
+                <div class="panel-header">SYSTEM OVERVIEW</div>
+                
+                <div class="info-row">
+                    <span class="label">Current Sector</span>
+                    <p style="margin:0">Hawkins Lab Laboratory / Internal Network</p>
+                </div>
+
+                <div class="info-row">
+                    <span class="label">Process Node</span>
+                    <p style="margin:0; color: #aaa;">Minimal-Path Settlement Algorithm v4.2. Running on HellChain™ Distributed Mesh.</p>
+                </div>
+
+                <div class="world-map">
+                    <div class="map-ping" style="top: 30%; left: 40%;"></div>
+                    <div class="map-ping" style="top: 50%; left: 70%;"></div>
+                </div>
+
+                <p style="font-size: 0.75rem; font-style: italic; color: var(--text-secondary); margin-top: 20px; border-left: 2px solid var(--neon-red); padding-left: 10px;">
+                    "Cut the cords. Resolve the debt. Stop the integration." — ADDY
+                </p>
+            </div>
+
+            <!-- CENTRAL MAIN SCREEN -->
+            <div class="central-screen">
+                <div class="screen-content">
+                    <div class="screen-overlay"></div>
+                    <div class="scanline"></div>
+                    
+                    <div class="engine-ui">
+                        <div style="font-size: 0.7rem; color: var(--neon-blue); margin-bottom: 10px; letter-spacing: 3px;">RESOLUTION ENGINE</div>
+                        <button class="inject-btn" onclick="document.getElementById('csv-file').click()">
+                            <span>⬖</span> Inject Ledger
+                        </button>
+                        <input type="file" id="csv-file" accept=".csv" style="display: none;">
+
+                        <div class="results-container" id="results">
+                            <ul class="results-list" id="list"></ul>
+                            <div style="display: flex; gap: 20px; align-items: center; margin-top: 15px;">
+                                <a id="dl" href="#" style="color: var(--neon-blue); font-size: 0.65rem; text-decoration: none;">💾 DOWNLOAD_PPTX</a>
+                                <a href="/analytics" style="color: var(--neon-red); font-size: 0.65rem; text-decoration: none; border: 1px solid var(--neon-red); padding: 4px 8px; border-radius: 4px;">📈 VIEW_ANALYTICS</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+
+        </div>
+
+        <!-- SIDEBAR FOR VOID INTELLIGENCE -->
+        <div class="ai-sidebar" id="sidebar">
+            <div class="ai-sidebar-content">
+                <div class="panel-header">VOID INTELLIGENCE</div>
+                
+                <div class="chat-box">
+                    <div class="chat-messages" id="chat">
+                        <div style="margin-bottom: 15px;">Connection established. The Void is stable. How can I assist with the settlement?</div>
+                    </div>
+                    <div class="chat-input-row">
+                        <input type="text" id="msgIn" placeholder="Enter command...">
+                        <button onclick="send()">SEND</button>
+                    </div>
+                </div>
+
+                <div class="interference-log">
+                    <div class="panel-header" style="font-size: 0.7rem; margin-bottom: 10px;">INTERFERENCE LOG</div>
+                    
+                    <div class="info-row" style="margin-bottom: 5px;">
+                        <span class="label" style="display:inline">Signal Integrity</span>
+                        <span style="float:right; font-size:0.7rem; color:var(--neon-blue)">94.2%</span>
+                        <div class="stat-bar-container"><div class="stat-fill" style="width: 94%"></div></div>
+                    </div>
+
+                    <div class="info-row" style="margin-bottom: 5px;">
+                        <span class="label" style="display:inline">Void Leakage</span>
+                        <span style="float:right; font-size:0.7rem; color:var(--neon-red)">STABLE</span>
+                        <div class="stat-bar-container" style="background: rgba(255,0,0,0.1);"><div class="stat-fill" style="width: 12%; background: var(--neon-red); box-shadow: 0 0 10px var(--neon-red);"></div></div>
+                    </div>
+
+                    <div class="graph-mini"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ANTIGRAVITY STYLE TOGGLE BUTTON -->
+        <div class="antigravity-toggle" onclick="toggleSidebar()">
+            <div class="toggle-icon">◀</div>
+            <div class="toggle-label">VOID AGENT</div>
+        </div>
+
+        <!-- BOTTOM FRAME & NAV -->
+        <div class="frame">
+            <div class="frame-nav">
+                <a href="/dashboard" class="nav-item">DASHBOARD</a>
+                <a href="/analytics" class="nav-item">ANALYTICS</a>
+                <a href="/history" class="nav-item">LEDGER HISTORY</a>
+                <a href="/login" class="nav-item">SIGN IN / UP</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('active');
+        }
+
+        function send() {
+            const inpt = document.getElementById('msgIn');
+            const box = document.getElementById('chat');
+            if(!inpt.value.trim()) return;
+
+            const uMsg = document.createElement('div');
+            uMsg.style.marginBottom = '10px';
+            uMsg.style.color = '#fff';
+            uMsg.innerText = '> ' + inpt.value;
+            box.appendChild(uMsg);
+            
+            const val = inpt.value.toLowerCase();
+            inpt.value = '';
+            box.scrollTop = box.scrollHeight;
+
+            setTimeout(() => {
+                const ai = document.createElement('div');
+                ai.style.marginBottom = '10px';
+                let resp = "The Hive Mind is calculating...";
+                if(val.includes('addy')) resp = "Addy's neural signature is stable. She is in the lower sectors.";
+                if(val.includes('debt')) resp = "Upload a ledger CSV to begin debt resolution analysis.";
+                if(val.includes('help')) resp = "Available commands: inject ledger, view analytics, check history.";
+                ai.innerText = resp;
+                box.appendChild(ai);
+                box.scrollTop = box.scrollHeight;
+            }, 800);
+        }
+
+        function sendRight() {
+            const inpt = document.getElementById('rightMsgIn');
+            const box = document.getElementById('rightChat');
+            if(!inpt.value.trim()) return;
+
+            const uMsg = document.createElement('div');
+            uMsg.style.marginBottom = '10px';
+            uMsg.style.color = '#fff';
+            uMsg.innerText = '> ' + inpt.value;
+            box.appendChild(uMsg);
+            
+            const val = inpt.value.toLowerCase();
+            inpt.value = '';
+            box.scrollTop = box.scrollHeight;
+
+            setTimeout(() => {
+                const ai = document.createElement('div');
+                ai.style.marginBottom = '10px';
+                let resp = "The Hive Mind is calculating...";
+                if(val.includes('addy')) resp = "Addy's neural signature is stable. She is in the lower sectors.";
+                if(val.includes('status')) resp = "All systems operational. Signal integrity at 94.2%.";
+                if(val.includes('help')) resp = "Available: status, inject ledger, view analytics, history.";
+                ai.innerText = resp;
+                box.appendChild(ai);
+                box.scrollTop = box.scrollHeight;
+            }, 800);
+        }
+
+        const f = document.getElementById('csv-file');
+        f.addEventListener('change', async () => {
+            if(!f.files[0]) return;
+            const fd = new FormData();
+            fd.append('file', f.files[0]);
+            const res = await fetch('/api/process', { method: 'POST', body: fd });
+            const data = await res.json();
+            if(res.ok) {
+                document.getElementById('results').style.display = 'block';
+                const l = document.getElementById('list'); l.innerHTML = '';
+                data.transactions.forEach(t => { 
+                    l.innerHTML += `<li>${t.payer} pays ${t.payee} [₹${t.amount}]</li>`; 
+                });
+                document.getElementById('dl').href = data.download_url;
+            }
+        });
+    </script>
+</body>
+</html>
